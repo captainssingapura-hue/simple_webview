@@ -1,13 +1,10 @@
 using Microsoft.UI;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Markup;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using Windows.UI;
-using Windows.ApplicationModel.DataTransfer;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Net.WebRequestMethods;
 
 namespace WinUI3TabsApp;
 
@@ -18,7 +15,9 @@ public sealed partial class MainWindow : Window
 
     public MainWindow()
     {
-        this.InitializeComponent(); 
+        this.InitializeComponent();
+        this.ExtendsContentIntoTitleBar = true;
+        SetTitleBar(CustomDragRegion);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 700));
         this.TabView_AddTabButtonClick(MainTabView, null);
     }
@@ -63,9 +62,9 @@ public sealed partial class MainWindow : Window
         var forwardBtn = new Button { Content = "→", Width = 36, Margin = new Thickness(0, 0, 4, 0), IsEnabled = false };
         var refreshBtn = new Button { Content = "⟳", Width = 36, Margin = new Thickness(0, 0, 8, 0), IsEnabled = false };
         var addressBox = new TextBox { PlaceholderText = "Enter a URL...", Text = url, VerticalAlignment = VerticalAlignment.Center };
-        //var goBtn = new Button { Content = "Go", Margin = new Thickness(8, 0, 0, 0), IsEnabled = false,
-          //  Style = (Style)Microsoft.UI.Xaml.Application.Current.Resources["AccentButtonStyle"] };
-        var userBtn = CreateAvatarButton("SB", Color.FromArgb(255, 178, 190, 181));
+        var userBtn = new Button { Content = Environment.UserName, Margin = new Thickness(8, 0, 0, 0), IsEnabled = true,
+            Style = (Style)Microsoft.UI.Xaml.Application.Current.Resources["AccentButtonStyle"] };
+        //var userBtn = CreateAvatarButton("SB", Color.FromArgb(255, 178, 190, 181));
         userBtn.Click += (s, e) =>
         {
             this.addTabWithUrl(MainTabView, "http://localhost:8888/html/me.html");
@@ -137,6 +136,7 @@ public sealed partial class MainWindow : Window
 
     private Button CreateAvatarButton(string initials, Color bgColor, double size = 28)
     {
+        string user = Environment.UserName;
         var circle = new Ellipse
         {
             Width = size,
@@ -146,7 +146,7 @@ public sealed partial class MainWindow : Window
 
         var text = new TextBlock
         {
-            Text = initials,
+            Text = user.Substring(0, 2).ToUpper(),
             FontFamily = new FontFamily("Segoe UI"),
             FontSize = size * 0.58,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,

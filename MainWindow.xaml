@@ -13,13 +13,14 @@
             IsAddTabButtonVisible="True"
             VerticalAlignment="Stretch">
 
+            <TabView.TabStripFooter>
+                <Grid x:Name="CustomDragRegion" Background="Transparent" MinWidth="188" />
+            </TabView.TabStripFooter>
+
             <!-- Static Tabs -->
             <TabView.TabItems>
-
-          
-    
-
             </TabView.TabItems>
+           
         </TabView>
     </Grid>
 </Window>
