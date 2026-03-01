@@ -34,8 +34,6 @@ WinUI3TabsApp/
 ├── App.xaml / App.xaml.cs         # Application bootstrap
 ├── MainWindow.xaml                # Main window with TabView
 ├── MainWindow.xaml.cs             # Tab logic, counter, notes, settings
-├── SettingsCard.xaml              # Reusable settings row control
-├── SettingsCard.xaml.cs           # SettingsCard dependency properties
 ├── Program.cs                     # Entry point
 └── WinUI3TabsApp.csproj           # Project file (Windows App SDK 1.5)
 ```
