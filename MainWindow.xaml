@@ -1,0 +1,25 @@
+<Window
+    x:Class="WinUI3TabsApp.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:WinUI3TabsApp"
+    Title="WinUI 3 WebView">
+
+    <Grid>
+        <TabView
+            x:Name="MainTabView"
+            AddTabButtonClick="TabView_AddTabButtonClick"
+            TabCloseRequested="TabView_TabCloseRequested"
+            IsAddTabButtonVisible="True"
+            VerticalAlignment="Stretch">
+
+            <!-- Static Tabs -->
+            <TabView.TabItems>
+
+          
+    
+
+            </TabView.TabItems>
+        </TabView>
+    </Grid>
+</Window>
