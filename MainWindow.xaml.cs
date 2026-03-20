@@ -3,7 +3,9 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
+using Windows.Foundation;
 using Windows.UI;
 
 namespace WinUI3TabsApp;
@@ -42,7 +44,7 @@ public sealed partial class MainWindow : Window
 
     private TabViewItem CreateDynamicTab(int number, string url)
     {
-        var tab = new TabViewItem { Header = "🌐 New Tab", IsClosable = true };
+        var tab = new TabViewItem { Header = "New Tab", IsClosable = true };
 
         // Root layout
         var root = new Grid();
@@ -57,6 +59,14 @@ public sealed partial class MainWindow : Window
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         //toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var gradient = new LinearGradientBrush();
+        gradient.StartPoint = new Point(0, 0);
+        gradient.EndPoint = new Point(1, 1);
+        gradient.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 26, 26, 46), Offset = 0 });
+        gradient.GradientStops.Add(new GradientStop { Color = ColorHelper.FromArgb(255, 22, 33, 62), Offset = 1 });
+
+        toolbar.Background = gradient;
 
         var backBtn = new Button { Content = "←", Width = 36, Margin = new Thickness(0, 0, 4, 0), IsEnabled = false };
         var forwardBtn = new Button { Content = "→", Width = 36, Margin = new Thickness(0, 0, 4, 0), IsEnabled = false };
@@ -99,10 +109,29 @@ public sealed partial class MainWindow : Window
             webView.CoreWebView2.DocumentTitleChanged += (core, _) =>
             {
                 var t = core.DocumentTitle;
-                tab.Header = string.IsNullOrWhiteSpace(t) ? "🌐 Tab" : $"🌐 {t}";
+                tab.Header = string.IsNullOrWhiteSpace(t) ? "Tab" : t;
             };
 
-            webView.NavigationStarting  += (_, ne) => { addressBox.Text = ne.Uri; tab.Header = "🌐 Loading…"; };
+            webView.CoreWebView2.FaviconChanged += (core, _) =>
+            {
+                var faviconUri = core.FaviconUri;
+                if (string.IsNullOrEmpty(faviconUri))
+                {
+                    tab.IconSource = null;
+                    return;
+                }
+                try
+                {
+                    var bitmap = new BitmapImage(new Uri(faviconUri));
+                    tab.IconSource = new ImageIconSource { ImageSource = bitmap };
+                }
+                catch
+                {
+                    tab.IconSource = null;
+                }
+            };
+
+            webView.NavigationStarting  += (_, ne) => { addressBox.Text = ne.Uri; tab.Header = "Loading…"; };
             webView.NavigationCompleted += (_, _)  => { backBtn.IsEnabled = webView.CanGoBack; forwardBtn.IsEnabled = webView.CanGoForward; };
 
             //goBtn.Click      += (_, _) => NavigateTo(addressBox.Text.Trim());

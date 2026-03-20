@@ -12,10 +12,45 @@
             TabCloseRequested="TabView_TabCloseRequested"
             IsAddTabButtonVisible="True"
             VerticalAlignment="Stretch">
+            
+            <TabView.TabStripHeader>
+                <Button>
+                    <Image Width="30" Height="30">
+                        <Image.Source>
+                            <SvgImageSource UriSource="ms-appx:///Assets/turtle_2.svg"/>
+                        </Image.Source>
+                    </Image>
+                </Button>
+            </TabView.TabStripHeader>
 
             <TabView.TabStripFooter>
                 <Grid x:Name="CustomDragRegion" Background="Transparent" MinWidth="188" />
             </TabView.TabStripFooter>
+
+            <TabView.Resources>
+        
+                <ResourceDictionary>
+                    <SolidColorBrush x:Key="TabViewItemHeaderForeground" Color="White"/>
+                    <SolidColorBrush x:Key="TabViewItemHeaderForegroundSelected" Color="White"/>
+                    <SolidColorBrush x:Key="TabViewItemHeaderForegroundPointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="TabViewItemHeaderForegroundPressed" Color="White"/>
+                    <!-- Background color for unselected/inactive tabs -->
+                    <!--<SolidColorBrush x:Key="TabViewItemHeaderBackground" Color="#D3D3D3"/>-->
+                    <!-- Background color for the selected/active tab -->
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundSelected" Color="#737373"/>
+                    <!-- Other states like PointerOver, Pressed can also be customized -->
+                    <SolidColorBrush x:Key="TabViewItemHeaderBackgroundPointerOver" Color="#A9A9A9"/>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="TabViewBackground" Color="#2E2E2E"/>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <SolidColorBrush x:Key="TabViewBackground" Color="{ThemeResource SystemAccentColorDark2}"/>
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
+            </TabView.Resources>
+
 
             <!-- Static Tabs -->
             <TabView.TabItems>
