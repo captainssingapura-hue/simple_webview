@@ -7,6 +7,37 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+            <!-- Danger Button -->
+            <Style x:Key="DangerButtonStyle" TargetType="Button"
+                   BasedOn="{StaticResource AccentButtonStyle}">
+                <Setter Property="Background" Value="#C42B1C"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+
+            <!-- Success Button -->
+            <Style x:Key="SuccessButtonStyle" TargetType="Button"
+                   BasedOn="{StaticResource AccentButtonStyle}">
+                <Setter Property="Background" Value="#0F7B0F"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+
+            <!-- Outline Button -->
+            <Style x:Key="OutlineButtonStyle" TargetType="Button"
+                   BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="{ThemeResource AccentAAFillColorDefaultBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="CornerRadius" Value="4"/>
+            </Style>
+
+            <!-- Pill Button -->
+            <Style x:Key="PillButtonStyle" TargetType="Button"
+                   BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="CornerRadius" Value="20"/>
+                <Setter Property="Padding" Value="20,8"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

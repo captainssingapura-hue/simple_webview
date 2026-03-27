@@ -1,7 +1,10 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Shapes;
@@ -14,14 +17,33 @@ public sealed partial class MainWindow : Window
 {
     private int _counterValue = 0;
     private int _dynamicTabCount = 0;
+    private TabViewItem? _draggedTab;
+    private DispatcherTimer? _dragMonitor;
 
-    public MainWindow()
+    [StructLayout(LayoutKind.Sequential)]
+    private struct POINT { public int X, Y; }
+
+    [DllImport("user32.dll")]
+    private static extern bool GetCursorPos(out POINT lpPoint);
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int vKey);
+    private const int VK_LBUTTON = 0x01;
+
+    public MainWindow(string? initialUrl = null)
     {
         this.InitializeComponent();
         this.ExtendsContentIntoTitleBar = true;
         SetTitleBar(CustomDragRegion);
         AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 700));
-        this.TabView_AddTabButtonClick(MainTabView, null);
+        addTabWithUrl(MainTabView, initialUrl ?? "http://localhost:8888/html/landing.html");
+
+        // Use AddHandler with handledEventsToo so we see pointer events
+        // even if TabView marks them handled internally
+        MainTabView.AddHandler(UIElement.PointerPressedEvent,
+            new PointerEventHandler(TabView_PointerPressed), true);
+        MainTabView.AddHandler(UIElement.PointerReleasedEvent,
+            new PointerEventHandler(TabView_PointerReleased), true);
     }
 
     private void TabView_AddTabButtonClick(TabView sender, object args)
@@ -40,6 +62,126 @@ public sealed partial class MainWindow : Window
     private void TabView_TabCloseRequested(TabView sender, TabViewTabCloseRequestedEventArgs args)
     {
         sender.TabItems.Remove(args.Tab);
+
+        if (sender.TabItems.Count == 0)
+        {
+            this.Close();
+        }
+    }
+
+    // --- Pointer-based tab tear-off (no XAML drag-and-drop) ---
+
+    private TabViewItem? FindTabViewItemFromElement(DependencyObject? element)
+    {
+        while (element != null)
+        {
+            if (element is TabViewItem tvi) return tvi;
+            element = VisualTreeHelper.GetParent(element);
+        }
+        return null;
+    }
+
+    private void TabView_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(null).Properties.IsLeftButtonPressed) return;
+        if (MainTabView.TabItems.Count <= 1) return;
+
+        var tab = FindTabViewItemFromElement(e.OriginalSource as DependencyObject);
+        if (tab == null) return;
+
+        _draggedTab = tab;
+        _dragMonitor = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        _dragMonitor.Tick += DragMonitor_Tick;
+        _dragMonitor.Start();
+    }
+
+    private void TabView_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _draggedTab = null;
+        StopDragMonitor();
+    }
+
+    private void DragMonitor_Tick(object? sender, object e)
+    {
+        if (_draggedTab == null) { StopDragMonitor(); return; }
+
+        // Check if the left mouse button is still held down
+        if ((GetAsyncKeyState(VK_LBUTTON) & 0x8000) == 0)
+        {
+            _draggedTab = null;
+            StopDragMonitor();
+            return;
+        }
+
+        if (!GetCursorPos(out var cursor)) return;
+
+        var pos = this.AppWindow.Position;
+        var size = this.AppWindow.Size;
+        int tabStripBottom = pos.Y + 48; // approximate tab strip height
+        int margin = 20;
+
+        bool outside = cursor.Y > tabStripBottom + margin
+                    || cursor.Y < pos.Y - margin
+                    || cursor.X < pos.X - margin
+                    || cursor.X > pos.X + size.Width + margin;
+
+        if (outside)
+        {
+            TearOffTab(cursor);
+        }
+    }
+
+    private void StopDragMonitor()
+    {
+        _dragMonitor?.Stop();
+        _dragMonitor = null;
+    }
+
+    private void TearOffTab(POINT cursorPos)
+    {
+        var tab = _draggedTab;
+        _draggedTab = null;
+        StopDragMonitor();
+        if (tab == null) return;
+
+        string url = "http://localhost:8888/html/landing.html";
+        if (tab.Content is Grid root)
+        {
+            foreach (var child in root.Children)
+            {
+                if (child is Microsoft.UI.Xaml.Controls.WebView2 webView
+                    && webView.Source != null)
+                {
+                    url = webView.Source.AbsoluteUri;
+                    webView.Close();
+                    break;
+                }
+            }
+        }
+
+        MainTabView.TabItems.Remove(tab);
+
+        // Launch a new process so the torn-off tab is fully independent
+        const int maxWidth = 1200;
+        const int maxHeight = 850;
+        var windowSize = this.AppWindow.Size;
+        int newWidth = Math.Min(windowSize.Width, maxWidth);
+        int newHeight = Math.Min(windowSize.Height, maxHeight);
+        int newX = cursorPos.X;
+        int newY = cursorPos.Y - 24;
+
+        var exePath = Environment.ProcessPath;
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = exePath,
+            Arguments = $"--url \"{url}\" --x {newX} --y {newY} --width {newWidth} --height {newHeight}",
+            UseShellExecute = false
+        });
+
+        if (MainTabView.TabItems.Count == 0)
+        {
+            this.Close();
+        }
     }
 
     private TabViewItem CreateDynamicTab(int number, string url)
@@ -73,7 +215,7 @@ public sealed partial class MainWindow : Window
         var refreshBtn = new Button { Content = "⟳", Width = 36, Margin = new Thickness(0, 0, 8, 0), IsEnabled = false };
         var addressBox = new TextBox { PlaceholderText = "Enter a URL...", Text = url, VerticalAlignment = VerticalAlignment.Center };
         var userBtn = new Button { Content = Environment.UserName, Margin = new Thickness(8, 0, 0, 0), IsEnabled = true,
-            Style = (Style)Microsoft.UI.Xaml.Application.Current.Resources["AccentButtonStyle"] };
+            Style = (Style)Microsoft.UI.Xaml.Application.Current.Resources["PillButtonStyle"] };
         //var userBtn = CreateAvatarButton("SB", Color.FromArgb(255, 178, 190, 181));
         userBtn.Click += (s, e) =>
         {
@@ -158,7 +300,7 @@ public sealed partial class MainWindow : Window
         root.Children.Add(webView);
         tab.CloseRequested += (_, _) => webView.Close();
         tab.Content = root;
-      
+
 
         return tab;
     }
